@@ -6,7 +6,7 @@ var delay = (ms) => new Promise(res => setTimeout(res, ms));
 var rando = (n) => Math.round(Math.random() * n);
 var fixCase = (fn)=> fn.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase() );
 
-var parseMember = (obj,meetup) => [cleanName(obj.name).replace(/,/g, ''), `https://www.meetup.com/${meetup}/members/${obj.id}/`,obj.joined,obj.last_visited,obj.photo ? obj.photo.highres_link : '']
+var parseMember = (obj,meetup) => [fixCase(obj.name).replace(/,/g, ''), `https://www.meetup.com/${meetup}/members/${obj.id}/`,obj.joined,obj.last_visited,obj.photo ? obj.photo.highres_link : ''];
 
 function downloadr(arr2D, filename) {
   if (/\.csv$/.test(filename) === true) {
@@ -71,4 +71,3 @@ console.log(numMembers);
 }
 
 looper()
-
