@@ -54,15 +54,10 @@ var containArr = [['Member Name','Member Profile','Join Date','Last Visited','Ph
 
 async function looper(){
   var meetup = reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
-  var run1 = await getMembersByPage(meetup,1);
-  var res1 = run1.responses[0].value;
-  var numMembers = res1.meta.all;
-  var memberRes = res1.value;
-  if(memberRes) memberRes.forEach(el=> containArr.push(parseMember(el,meetup)));
-console.log(numMembers);
-  for(var i=2; i<=(numMembers/30); i++){
+  for(var i=1; i<=1000; i++){
     var res = await getMembersByPage(meetup,i);
     if(res) res.responses[0].value.value.forEach(el=> containArr.push(parseMember(el,meetup)));
+    if(res.responses[0].value.value.length < 30) break;
     console.log(i);
     await delay(1200);
   }
