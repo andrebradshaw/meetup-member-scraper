@@ -5,8 +5,13 @@ var gi = (o, s) => o ? o.getElementById(s) : console.log(o);
 var delay = (ms) => new Promise(res => setTimeout(res, ms));
 var rando = (n) => Math.round(Math.random() * n);
 var fixCase = (fn)=> fn.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase() );
+var ele = (t) => document.createElement(t);
+var attr = (o, k, v) => o.setAttribute(k, v);
 
-var parseMember = (obj,meetup) => [fixCase(obj.name).replace(/,/g, ''), `https://www.meetup.com/${meetup}/members/${obj.id}/`,obj.joined,obj.last_visited,obj.photo ? obj.photo.highres_link : ''];
+var a = (l, r) => r.forEach(a => attr(l, a[0], a[1]));
+
+var parseMember = (obj,meetup) => [fixCase(obj.name).replace(/,/g, ''), obj.role.replace(/,/g, ''), obj.status.replace(/,/g, ''), obj.intro.replace(/,/g, '').replace(/\n|\r/g, ''), obj.title.replace(/,/g,''), `https://www.meetup.com/${meetup}/members/${obj.id}/`,obj.joined,obj.last_visited,obj.photo ? obj.photo.highres_link : ''];
+
 
 function downloadr(arr2D, filename) {
   if (/\.csv$/.test(filename) === true) {
@@ -44,25 +49,54 @@ function downloadr(arr2D, filename) {
     }, 10);
   }
 }
+async function getNumberOfMembers(){
+  var res = await fetch('https://www.meetup.com/atlanta-computer-club-dot-com/members');
+  var text = await res.text();
+  var doc = new DOMParser().parseFromString(text,'text/html');
+  var membersNum = reg(/All members\s*([\d,]+)/.exec(doc.body.innerText),1).replace(/,/g,'');
+  var all_mem_num = membersNum ? parseInt(membersNum) : 0;
+  return all_mem_num;
+}
 
 async function getMembersByPage(meetup,p) {
   var res = await fetch(`https://www.meetup.com/mu_api/urlname/members?queries=%28endpoint%3Agroups%2F${meetup}%2Fmembers%2Clist%3A%28dynamicRef%3Alist_groupMembers_${meetup}_all%2Cmerge%3A%28isReverse%3A%21f%29%29%2Cmeta%3A%28method%3Aget%29%2Cparams%3A%28filter%3Aall%2Cpage%3A${p}%29%2Cref%3AgroupMembers_${meetup}_all%29`);
   var d = await res.json();
+console.log(d);
   return d;
 }
-var containArr = [['Member Name','Member Profile','Join Date','Last Visited','Photo Link']];
+var containArr = [['Member Name','Role','Status','Intro','Title','Member Profile','Join Date','Last Visited','Photo Link']];
+
+function createLoadingHTML(){
+  var contid = gi(document,'meetup_scraper_status');
+  if(contid) contid.outerHTML = '';
+  var cont = ele('div');
+  a(cont,[['id','meetup_scraper_status'],['style',`position: fixed; top: 100px; left: 40%; padding: 16px; background: #070f1c; color: #fff; border-radius: 0.4em;`]]);
+  document.body.appendChild(cont);
+  cont.innerText = 'initializing...';
+}
 
 async function looper(){
+  createLoadingHTML();
   var meetup = reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
-  for(var i=1; i<=1000; i++){
+  var num_members = await getNumberOfMembers();
+  var contid = gi(document,'meetup_scraper_status');
+  contid.innerText = `downloading ${num_members} members...`;
+  var loopMax = Math.ceil(num_members/30);
+  for(var i=1; i<=loopMax; i++){
+    var per = Math.ceil(((i*30)/num_members)*100) < 100 ? Math.ceil(((i*30)/num_members)*100) : 100;
+    contid.innerText = `${per}% complete`;
     var res = await getMembersByPage(meetup,i);
-    if(res) res.responses[0].value.value.forEach(el=> containArr.push(parseMember(el,meetup)));
-    if(res.responses[0].value.value.length < 30) break;
+    if(res && res.responses && res.responses.length && res.responses[0].value && res.responses[0].value.value.length) res.responses[0].value.value.forEach(el=> containArr.push(parseMember(el,meetup)));
+    if(res.responses[0].value.value.length == 0 ) {contid.style.opacity = '.1'; contid.style.transition = 'all 222ms'; break;}
     console.log(i);
-    await delay(1200);
+    await delay(rando(1200)+1000);
   }
-  
-  downloadr(containArr, meetup+new Date().getTime()+'.csv');
+  contid.innerText = `100% complete`;
+  contid.style.opacity = '.01'; 
+  contid.style.transition = 'all 322ms';
+  downloadr(containArr, meetup+'_'+new Date().getTime()+'.csv');
+  await delay(333);
+  contid.outerHTML = '';
 }
 
 looper()
