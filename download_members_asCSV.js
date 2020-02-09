@@ -1,4 +1,3 @@
-
 var reg = (o, n) => o ? o[n] : '';
 var cn = (o, s) => o ? o.getElementsByClassName(s) : console.log(o);
 var tn = (o, s) => o ? o.getElementsByTagName(s) : console.log(o);
@@ -80,7 +79,7 @@ async function looper(){
   createLoadingHTML();
   var bgs = ['#228a3e','#1f7335','#185929','#12451f','#0d3317'];
   var meetup = reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
-  var num_members = await getNumberOfMembers();
+  var num_members = 5000; //await getNumberOfMembers();
   var contid = gi(document,'meetup_scraper_status');
   contid.innerText = `downloading ${num_members} members...`;
   var loopMax = Math.ceil(num_members/30);
@@ -93,7 +92,7 @@ async function looper(){
 
     var res = await getMembersByPage(meetup,i);
     if(res && res.responses && res.responses.length && res.responses[0].value && res.responses[0].value.value.length) res.responses[0].value.value.forEach(el=> containArr.push(parseMember(el,meetup)));
-    if(res.responses[0].value.value.length == 0 ) {contid.style.opacity = '.1'; contid.style.transition = 'all 222ms'; break;}
+    if(res.responses[0].value && res.responses[0].value.value.length == 0 ) {contid.style.opacity = '.1'; contid.style.transition = 'all 222ms'; break;}
     console.log(i);
     await delay(r+1000);
   }
