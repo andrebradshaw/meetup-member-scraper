@@ -10,30 +10,29 @@ var attr = (o, k, v) => o.setAttribute(k, v);
 
 var a = (l, r) => r.forEach(a => attr(l, a[0], a[1]));
 
-var parseMember = (obj,meetup) => [fixCase(obj.name).replace(/,/g, ''), obj.role.replace(/,/g, ''), obj.status.replace(/,/g, ''), obj.intro.replace(/,/g, '').replace(/\n|\r/g, ''), obj.title.replace(/,/g,''), `https://www.meetup.com/${meetup}/members/${obj.id}/`,obj.joined,obj.last_visited,obj.photo ? obj.photo.highres_link : ''];
+var parseMember = (obj,meetup) => [
+fixCase(obj.name).replace(/,/g, ''), 
+obj.role.replace(/,/g, ''), 
+obj.status.replace(/,/g, ''), 
+obj.intro.replace(/,/g, '').replace(/\n|\r/g, ''), 
+obj.title.replace(/,/g,''), 
+`https://www.meetup.com/${meetup}/members/${obj.id}/`,
+obj.joined,
+obj.last_visited,
+obj.photo ? obj.photo.highres_link : ''];
 
 
 function downloadr(arr2D, filename) {
-  if (/\.csv$/.test(filename) === true) {
-	var data = '';
-	arr2D.forEach(row => {
-		var arrRow = '';
-		row.forEach(col => {
-			col ? arrRow = arrRow + col.toString().replace(/,/g, ' ') + ',' : arrRow = arrRow + ' ,';
-        });
-		data = data + arrRow + '\r'; 
-	});
-  }
-
-  if (/\.json$|.js$/.test(filename) === true) {
-    var data = JSON.stringify(arr2D);
-    var type = 'data:application/json;charset=utf-8,';
-  } else {
-	var type = 'data:text/plain;charset=utf-8,';
-  }
-  var file = new Blob([data], {
-    type: type
+  var data = '';
+  arr2D.forEach(row => {
+    var arrRow = '';
+    row.forEach(col => {
+      col ? arrRow = arrRow + col.toString().replace(/,/g, ' ') + ',' : arrRow = arrRow + ' ,';
+    });
+    data = data + arrRow + '\r'; 
   });
+  
+  var file = new Blob([data], {    type: 'data:text/plain;charset=utf-8,'  });
   if (window.navigator.msSaveOrOpenBlob) {
     window.navigator.msSaveOrOpenBlob(file, filename);
   } else {
@@ -49,6 +48,7 @@ function downloadr(arr2D, filename) {
     }, 10);
   }
 }
+
 async function getNumberOfMembers(){
   var res = await fetch('https://www.meetup.com/atlanta-computer-club-dot-com/members');
   var text = await res.text();
@@ -77,19 +77,24 @@ function createLoadingHTML(){
 
 async function looper(){
   createLoadingHTML();
+  var bgs = ['#228a3e','#1f7335','#185929','#12451f','#0d3317'];
   var meetup = reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
   var num_members = await getNumberOfMembers();
   var contid = gi(document,'meetup_scraper_status');
   contid.innerText = `downloading ${num_members} members...`;
   var loopMax = Math.ceil(num_members/30);
   for(var i=1; i<=loopMax; i++){
+    var r = rando(1200);
     var per = Math.ceil(((i*30)/num_members)*100) < 100 ? Math.ceil(((i*30)/num_members)*100) : 100;
     contid.innerText = `${per}% complete`;
+    contid.style.background = bgs[rando(bgs.length)];
+    contid.style.transition = `all ${r+1000}ms`;
+
     var res = await getMembersByPage(meetup,i);
     if(res && res.responses && res.responses.length && res.responses[0].value && res.responses[0].value.value.length) res.responses[0].value.value.forEach(el=> containArr.push(parseMember(el,meetup)));
     if(res.responses[0].value.value.length == 0 ) {contid.style.opacity = '.1'; contid.style.transition = 'all 222ms'; break;}
     console.log(i);
-    await delay(rando(1200)+1000);
+    await delay(r+1000);
   }
   contid.innerText = `100% complete`;
   contid.style.opacity = '.01'; 
