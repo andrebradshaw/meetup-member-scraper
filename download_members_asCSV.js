@@ -1,3 +1,4 @@
+
 var reg = (o, n) => o ? o[n] : '';
 var cn = (o, s) => o ? o.getElementsByClassName(s) : console.log(o);
 var tn = (o, s) => o ? o.getElementsByTagName(s) : console.log(o);
@@ -54,7 +55,7 @@ async function getNumberOfMembers(){
   var text = await res.text();
   var doc = new DOMParser().parseFromString(text,'text/html');
   var membersNum = reg(/All members\s*([\d,]+)/.exec(doc.body.innerText),1).replace(/,/g,'');
-  var all_mem_num = membersNum ? parseInt(membersNum) : 0;
+  var all_mem_num = membersNum ? parseInt(membersNum) : 1000;
   return all_mem_num;
 }
 
