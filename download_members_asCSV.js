@@ -114,3 +114,20 @@ console.log(num_members)
 }
 
 looper()
+
+
+/*
+//gets the missing location data, but has to be run over each member -- which will take forever. Maybe worth running in collaberation with a dive into LinkedIN data.
+async function getMemberPage(url){
+  var res = await fetch(url);
+  var text = await res.text();
+  var doc = new DOMParser().parseFromString(text,'text/html');
+  var geoElm = cn(doc,'locality')[0] ? cn(doc,'locality')[0].parentElement : null;
+  var geoName = geoElm ? geoElm.innerText.trim() : '';
+  var geoUrl = geoElm ? geoElm.href : '';
+
+  console.log(geoUrl)
+}
+
+getMemberPage(`https://www.meetup.com/ALE-Atlanta-Linux-Enthusiasts/members/23690981/`)
+*/
