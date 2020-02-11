@@ -10,8 +10,13 @@ var attr = (o, k, v) => o.setAttribute(k, v);
 
 var a = (l, r) => r.forEach(a => attr(l, a[0], a[1]));
 
+var fn = (s) => reg(/^\S+/.exec(s),0);
+var ln = (s) => reg(/(?<=\s+).+/.exec(s),0);
+
+
 var parseMember = (obj,meetup) => [
-fixCase(obj.name).replace(/,/g, ''), 
+fn(fixCase(obj.name).replace(/,/g, '')),
+ln(fixCase(obj.name).replace(/,/g, '')), 
 obj.role.replace(/,/g, ''), 
 obj.status.replace(/,/g, ''), 
 obj.intro.replace(/,/g, '').replace(/\n|\r/g, ''), 
@@ -49,22 +54,24 @@ function downloadr(arr2D, filename) {
   }
 }
 
-async function getNumberOfMembers(){
-  var res = await fetch('https://www.meetup.com/atlanta-computer-club-dot-com/members');
+async function getNumberOfMembers(meetup){
+  var res = await fetch('https://www.meetup.com/'+meetup+'/members');
   var text = await res.text();
   var doc = new DOMParser().parseFromString(text,'text/html');
-  var membersNum = reg(/All members\s*([\d,]+)/.exec(doc.body.innerText),1).replace(/,/g,'');
-  var all_mem_num = membersNum ? parseInt(membersNum) : 1000;
+  var membersNum = reg(/(?<=All members\s*|membres\s*)[\d,\s]+/.exec(doc.body.innerText),0).replace(/\D+/g,'');
+console.log(membersNum)
+  var memnum = tn(cn(doc,'groupHomeHeaderInfo-memberLink')[0],'span')[0] ? tn(cn(doc,'groupHomeHeaderInfo-memberLink')[0],'span')[0].innerText.replace(/\D+/g,'') : '5000';
+  var all_mem_num = memnum ? parseInt(memnum) : 1000;
   return all_mem_num;
 }
 
 async function getMembersByPage(meetup,p) {
   var res = await fetch(`https://www.meetup.com/mu_api/urlname/members?queries=%28endpoint%3Agroups%2F${meetup}%2Fmembers%2Clist%3A%28dynamicRef%3Alist_groupMembers_${meetup}_all%2Cmerge%3A%28isReverse%3A%21f%29%29%2Cmeta%3A%28method%3Aget%29%2Cparams%3A%28filter%3Aall%2Cpage%3A${p}%29%2Cref%3AgroupMembers_${meetup}_all%29`);
   var d = await res.json();
-console.log(d);
+  console.log(d);
   return d;
 }
-var containArr = [['Member Name','Role','Status','Intro','Title','Member Profile','Join Date','Last Visited','Photo Link']];
+var containArr = [['First Name','Last Name','Role','Status','Intro','Title','Member Profile','Join Date','Last Visited','Photo Link']];
 
 function createLoadingHTML(){
   var contid = gi(document,'meetup_scraper_status');
@@ -78,11 +85,13 @@ function createLoadingHTML(){
 async function looper(){
   createLoadingHTML();
   var bgs = ['#228a3e','#1f7335','#185929','#12451f','#0d3317'];
-  var meetup = reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
-  var num_members = 5000; //await getNumberOfMembers();
+  var langCheck = /en-AU|de-DE|es-ES|fr-FR|it-IT|nl-NL|pl-PL|pt-BR|tr-TR|ru-RU|th-TH|ja-JP|ko-KR/.test(window.location.href);
+  var meetup = langCheck ? reg(/(?<=meetup.com\/[a-z]+-[A-Z]+\/).+?(?=\/)/.exec(window.location.href),0) : reg(/(?<=meetup.com\/).+?(?=\/)/.exec(window.location.href),0);
+  var num_members = await getNumberOfMembers(meetup);
   var contid = gi(document,'meetup_scraper_status');
   contid.innerText = `downloading ${num_members} members...`;
   var loopMax = Math.ceil(num_members/30);
+console.log(num_members)
   for(var i=1; i<=loopMax; i++){
     var r = rando(1200);
     var per = Math.ceil(((i*30)/num_members)*100) < 100 ? Math.ceil(((i*30)/num_members)*100) : 100;
